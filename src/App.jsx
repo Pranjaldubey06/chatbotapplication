@@ -2,17 +2,19 @@
 
 
 import './App.css'
-import ChatBotApp from './ChatBotApp'
+import Home from './components/Home'
+
 
 function App() {
-  // const [count, setCount] = useState(0)
+
 
   return (
     <>
-    
-      <ChatBotApp/>
+    <div className="min-h-screen bg-gradient-to-r from-zinc-700 to-zinc-800">
+    <Home/>
+    </div>
     </>
   )
 }
 
-export default App
+export default App;

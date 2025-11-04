@@ -1,63 +1,155 @@
+import { useState, useRef, useEffect } from "react";
+import "./App.css";
 import axios from "axios";
-import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 function ChatBotApp() {
+  const [chatHistory, setChatHistory] = useState([]);
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [generatingAnswer, setGeneratingAnswer] = useState(false);
+  const chatContainerRef = useRef(null);
 
-  async function generateAnswer() {
-    setAnswer("Thinking... 🤔");
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatHistory, generatingAnswer]);
+
+  async function generateAnswer(e) {
+    e.preventDefault();
+    if (!question.trim()) return;
+
+    setGeneratingAnswer(true);
+    const currentQuestion = question;
+    setQuestion("");
+
+    // Add user question to chat history
+    setChatHistory((prev) => [
+      ...prev,
+      { type: "question", content: currentQuestion },
+    ]);
 
     try {
-      const response = await axios({
-        url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyA68msWFFUXfSqmnnWNQcbUb4rWF3GvKbs",
-        method: "post",
-        data: {
+      const apiKey = import.meta.env.VITE_API_KEY;
+      if (!apiKey) throw new Error("API key is not defined. Check your .env file!");
+
+      // ✅ Correct Gemini API endpoint
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+        {
           contents: [
             {
-              parts: [{ text: question }],
+              role: "user",
+              parts: [{ text: currentQuestion }],
             },
           ],
-        },
-      });
-
-      setAnswer(
-        response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "No answer found."
+        }
       );
+
+      const aiResponse =
+        response?.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "No answer found.";
+
+      // Add AI response to chat history
+      setChatHistory((prev) => [
+        ...prev,
+        { type: "answer", content: aiResponse },
+      ]);
     } catch (error) {
-      setAnswer(" Error fetching answer. Check console.");
-      console.error(error);
+      console.error("Error generating answer:", error);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          type: "answer",
+          content: "⚠️ Sorry, something went wrong. Please try again!",
+        },
+      ]);
     }
 
-    setQuestion("");
+    setGeneratingAnswer(false);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center p-4">
-      <div className="bg-white shadow-2xl rounded-2xl max-w-xl w-full p-6 space-y-4">
-        <h1 className="text-3xl font-bold text-center text-indigo-700">
-          🤖 ChatBot
-        </h1>
+    <div className="fixed inset-0 bg-gradient-to-r from-blue-50 to-blue-100">
+      <div className="h-full max-w-4xl mx-auto flex flex-col p-3">
+        <header className="text-center py-4">
+          <h1 className="text-4xl font-bold text-blue-500 hover:text-blue-600 transition-colors">
+            Chat AI 🤖
+          </h1>
+        </header>
 
-        <div className="bg-gray-100 rounded-xl p-4 min-h-[100px] text-gray-800">
-          {answer || "Ask something to get started..."}
+        <div
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto mb-4 rounded-lg bg-white shadow-lg p-4 hide-scrollbar"
+        >
+          {chatHistory.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6">
+              <div className="bg-blue-50 rounded-xl p-8 max-w-2xl">
+                <h2 className="text-2xl font-bold text-blue-600 mb-4">
+                  Welcome to Chat AI! 👋
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  I’m here to help you with anything you’d like to know.
+                </p>
+              </div>
+            </div>
+          ) : (
+            chatHistory.map((chat, index) => (
+              <div
+                key={index}
+                className={`mb-4 ${
+                  chat.type === "question" ? "text-right" : "text-left"
+                }`}
+              >
+                <div
+                  className={`inline-block max-w-[80%] p-3 rounded-lg ${
+                    chat.type === "question"
+                      ? "bg-blue-500 text-white rounded-br-none"
+                      : "bg-gray-100 text-gray-800 rounded-bl-none"
+                  }`}
+                >
+                  <ReactMarkdown>{chat.content}</ReactMarkdown>
+                </div>
+              </div>
+            ))
+          )}
+
+          {generatingAnswer && (
+            <div className="text-left">
+              <div className="inline-block bg-gray-100 p-3 rounded-lg animate-pulse">
+                Thinking...
+              </div>
+            </div>
+          )}
         </div>
 
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Type your question here..."
-          className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-          rows={4}
-        />
-
-        <button
-          onClick={generateAnswer}
-          className="w-full bg-indigo-600 text-white py-2 rounded-xl font-semibold hover:bg-indigo-700 transition"
-        >
-          ✨ Generate Answer
-        </button>
+        <form onSubmit={generateAnswer} className="bg-white rounded-lg shadow-lg p-4">
+          <div className="flex gap-2">
+            <textarea
+              required
+              className="flex-1 border border-gray-300 rounded p-3 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 resize-none"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask anything..."
+              rows="2"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  generateAnswer(e);
+                }
+              }}
+            />
+            <button
+              type="submit"
+              className={`px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors ${
+                generatingAnswer ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={generatingAnswer}
+            >
+              Send
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
