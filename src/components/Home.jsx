@@ -56,8 +56,10 @@ function Home() {
     <div className="flex h-screen bg-gradient-to-r from-zinc-800 to-zinc-900 text-white">
    
       <div className="hidden md:block w-64 bg-zinc-900 border-r border-zinc-700 p-6">
-        <h2 className="text-xl font-semibold mb-4">ChatBot</h2>
-        <p className="text-sm text-zinc-400">Ask any question below!</p>
+        <h2 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+  ChatBot
+</h2>
+        <p className="text-sm text-zinc-400 d">Ask any question below!</p>
       </div>
 
       
@@ -98,9 +100,9 @@ function Home() {
                 }
               })
             ) : (
-              <p className="text-center text-white mt-10 font-bold">
-                Hello, how can I help you?
-              </p>
+              <p className="text-center mt-10 font-bold text-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
+  Hello, how can I help you?
+</p>
             )}
           </div>
         </div>
