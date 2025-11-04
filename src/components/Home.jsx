@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { URL } from "../constants/constants";
 import Answers from "./Answers";
+import { PiRobotFill } from "react-icons/pi";
+
 
 function Home() {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState([]);
+  const [recentHistory, setRecentHistory] = useState(JSON.parse(localStorage.getItem("history")))
 
   const payload = {
     contents: [
@@ -16,6 +19,19 @@ function Home() {
   };
 
   const askQuestion = async () => {
+
+
+    if (localStorage.getItem("history")) {
+      let history = JSON.parse(localStorage.getItem("history"));
+      history = [question, ...history];
+      localStorage.setItem("history", JSON.stringify(history));
+      setRecentHistory(history);
+    } else {
+      localStorage.setItem("history", JSON.stringify([question]));
+      setRecentHistory([question]);
+    }
+
+
     if (!question.trim()) return;
 
     try {
@@ -50,19 +66,30 @@ function Home() {
         },
       ]);
     }
-  };
 
+  };
+  console.log(recentHistory)
   return (
     <div className="flex h-screen bg-gradient-to-r from-zinc-800 to-zinc-900 text-white">
-   
+
       <div className="hidden md:block w-64 bg-zinc-900 border-r border-zinc-700 p-6">
-        <h2 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-  ChatBot
-</h2>
-        <p className="text-sm text-zinc-400 d">Ask any question below!</p>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            ChatBot
+          </h2>
+          <span className="text-sm text-zinc-400"><PiRobotFill size={24}/></span>
+        </div>
+
+
+        <p className="text-sm text-white d font-semibold">Recent Search</p>
+        {
+          recentHistory && recentHistory.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))
+        }
       </div>
 
-      
+
       <div className="flex-1 flex flex-col">
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-3xl mx-auto space-y-4">
@@ -101,8 +128,8 @@ function Home() {
               })
             ) : (
               <p className="text-center mt-10 font-bold text-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
-  Hello, how can I help you?
-</p>
+                Hello, how can I help you?
+              </p>
             )}
           </div>
         </div>
